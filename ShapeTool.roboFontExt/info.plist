@@ -19,7 +19,7 @@
 	<key>timeStamp</key>
 	<real>1395371045</real>
 	<key>version</key>
-	<string>1.3</string>
+	<string>1.4</string>
 	<key>requiresVersionMajor</key>
 	<string>1</string>
 	<key>requiresVersionMinor</key>
@@ -30,6 +30,6 @@
 		<string>typemytype/shapeToolRoboFontExtension</string>
 		<key>summary</key>
 		<string>Draw primitieves: rectangles and circles.</string>
-	</dict
+	</dict>
 </dict>
 </plist>
