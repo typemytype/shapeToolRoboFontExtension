@@ -188,6 +188,7 @@ class DrawGeometricShapesTool(BaseEventTool):
 
         # tell the glyph you are done with your actions so it can handle the undo properly
         glyph.performUndo()
+        glyph.changed()
 
     def mouseDown(self, point, clickCount):
         # a mouse down, only save the mouse down point
