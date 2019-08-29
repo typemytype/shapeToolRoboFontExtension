@@ -7,7 +7,7 @@ from dialogKit import ModalDialog, TextBox, EditText
 from vanilla import RadioGroup
 
 try:
-    from ufoLib.pointPen import ReverseContourPointPen
+    from fontTools.pens.pointPen import ReverseContourPointPen
 except:
     from robofab.pens.reverseContourPointPen import ReverseContourPointPen
 
