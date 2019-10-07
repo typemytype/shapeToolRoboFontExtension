@@ -9,7 +9,7 @@
 	<key>developerURL</key>
 	<string>http://www.typemytype.com</string>
 	<key>html</key>
-	<false/>
+	<true/>
 	<key>launchAtStartUp</key>
 	<true/>
 	<key>mainScript</key>
@@ -21,7 +21,7 @@
 	<key>requiresVersionMinor</key>
 	<string>2</string>
 	<key>timeStamp</key>
-	<real>1570466505.808331</real>
+	<real>1570478567.8899269</real>
 	<key>version</key>
 	<string>1.7</string>
 </dict>

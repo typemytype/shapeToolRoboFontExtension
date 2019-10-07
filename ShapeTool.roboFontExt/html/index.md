@@ -10,7 +10,7 @@ Installation
 
 Download and double-click the `.roboFontExt` file to install manually, or get it via [Mechanic2](http://robofontmechanic.com/).
 
-When installed, ShapeTool becomes available from the Glyph Editor’s toolbar.
+When installed, ShapeTool becomes available from the Glyph Editor’s toolbar:
 
 ![](ShapeTool_toolbar.png)
 
