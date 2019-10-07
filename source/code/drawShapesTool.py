@@ -6,15 +6,15 @@ from lib.tools.drawing import strokePixelPath
 from dialogKit import ModalDialog, TextBox, EditText
 from vanilla import RadioGroup
 
-try:
+try: # RF >= 3.3b
     from fontTools.pens.pointPen import ReverseContourPointPen
 except:
-    from robofab.pens.reverseContourPointPen import ReverseContourPointPen
+    from ufoLib.pointPen import ReverseContourPointPen
 
 from mojo.extensions import ExtensionBundle
 
 
-# collecting the image data for building cursors and toolbar icons
+# collecting image data for building cursors and toolbar icons
 
 shapeBundle = ExtensionBundle("ShapeTool")
 _cursorOval = CreateCursor(shapeBundle.get("cursorOval"), hotSpot=(6, 6))
@@ -38,7 +38,7 @@ class GeometricShapesWindow(object):
                             okCallback=self.okCallback,
                             cancelCallback=self.cancelCallback)
 
-        # add some text boxes
+        # add some text boxes (labels)
         self.w.xText = TextBox((10, 13, 100, 22), "x")
         self.w.yText = TextBox((10, 43, 100, 22), "y")
         self.w.wText = TextBox((100, 13, 100, 22), "w")
@@ -50,8 +50,8 @@ class GeometricShapesWindow(object):
         self.w.wInput = EditText((120, 10, 50, 22))
         self.w.hInput = EditText((120, 40, 50, 22))
 
-        # a radio shape choice group
-        # (the RadioGroup isn't standaard in dialogKit, this is a vanilla object)
+        # a radio group with shape choices
+        # (RadioGroup is not included in dialogKit, this is a vanilla object)
         self.shapes = ["rect", "oval"]
         self.w.shape = RadioGroup((10, 70, -10, 22), self.shapes, isVertical=False)
         self.w.shape.set(0)
@@ -87,7 +87,7 @@ def _roundPoint(x, y):
 class DrawGeometricShapesTool(BaseEventTool):
 
     def setup(self):
-        # setup is called when the tool gets active
+        # setup is called when the tool becomes active
         # use this to initialize some attributes
         self.minPoint = None
         self.maxPoint = None
@@ -116,13 +116,13 @@ class DrawGeometricShapesTool(BaseEventTool):
                 w = abs(h) * sign
 
         if self.origin == "center":
-            # if the orgin is centered substract the width and height
+            # if the origin is centered, subtract the width and height
             x -= w
             y -= h
             w *= 2
             h *= 2
 
-        # optimize the retangle, so the width and height are always postive numbers
+        # optimize the rectangle so that width and height are always positive numbers
         if w < 0:
             w = abs(w)
             x -= w
@@ -146,7 +146,7 @@ class DrawGeometricShapesTool(BaseEventTool):
 
         x, y, w, h = rect
 
-        # draw with the pen a rect in the glyph
+        # draw a rectangle in the glyph using the pen
         if shape == "rect":
             pen.beginPath()
             pen.addPoint(_roundPoint(x, y), "line")
@@ -156,12 +156,10 @@ class DrawGeometricShapesTool(BaseEventTool):
 
             pen.endPath()
 
-        # draw with the pen an oval in the glyph
+        # draw an oval in the glyph using the pen
         elif shape == "oval":
-
             hw = w/2.
             hh = h/2.
-
             r = .55
             segmentType = glyph.preferredSegmentType
             if glyph.preferredSegmentType == "qcurve":
@@ -193,7 +191,7 @@ class DrawGeometricShapesTool(BaseEventTool):
     def mouseDown(self, point, clickCount):
         # a mouse down, only save the mouse down point
         self.minPoint = point
-        # on double click pop up an modal dialog with inputs
+        # on double click, pop up a modal dialog with input fields
         if clickCount == 2:
             # create and open the modal dialog
             GeometricShapesWindow(self.getGlyph(),
@@ -202,7 +200,7 @@ class DrawGeometricShapesTool(BaseEventTool):
                             y=self.minPoint.y)
 
     def mouseDragged(self, point, delta):
-        # record the draggin point
+        # record the dragging point
         self.maxPoint = point
         # if shift the minPoint by the move shift
         if self.moveShapeShift:
@@ -225,7 +223,7 @@ class DrawGeometricShapesTool(BaseEventTool):
             self.getNSView().refresh()
 
     def modifiersChanged(self):
-        # is been called when the modifiers changed (shift, alt, control, command)
+        # is being called with modifiers changed (shift, alt, control, command)
         self.shape = "rect"
         self.origin = "corner"
 
