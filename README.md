@@ -3,7 +3,7 @@ Shape Tool
 
 An interactive tool to draw primitive geometric shapes: rectangles and ovals.
 
-<img src="ShapeToolMechanicIcon.png" alt="drawing" width="52px"/>
+<img src="ShapeToolMechanicIcon.png" alt="drawing" width="64px"/>
 
 Installation
 ------------
@@ -19,7 +19,6 @@ Usage
 
 - open the Glyph Editor
 - click on the ShapeTool icon to activate it 
-- use the tool to draw primitives
 
 <!-- add a nice simple .gif screencast here -->
 
