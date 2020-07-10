@@ -3,8 +3,7 @@ from AppKit import *
 
 from lib.tools.drawing import strokePixelPath
 
-from dialogKit import ModalDialog, TextBox, EditText
-from vanilla import RadioGroup
+import vanilla
 
 try: # RF >= 3.3b
     from fontTools.pens.pointPen import ReverseContourPointPen
@@ -32,29 +31,34 @@ class GeometricShapesWindow(object):
     def __init__(self, glyph, callback, x, y):
         self.glyph = glyph
         self.callback = callback
-        # create the modal dialog (from dialogKit)
-        self.w = ModalDialog((200, 150),
-                            "Shapes Tool",
-                            okCallback=self.okCallback,
-                            cancelCallback=self.cancelCallback)
 
+        self.w = vanilla.Sheet((200, 160), parentWindow=NSApp().mainWindow())
+        
+        self.w.infoText = vanilla.TextBox((10, 13, -10, 22), "Add shape:")
         # add some text boxes (labels)
-        self.w.xText = TextBox((10, 13, 100, 22), "x")
-        self.w.yText = TextBox((10, 43, 100, 22), "y")
-        self.w.wText = TextBox((100, 13, 100, 22), "w")
-        self.w.hText = TextBox((100, 43, 100, 22), "h")
+        self.w.xText = vanilla.TextBox((10, 43, 100, 22), "x")
+        self.w.yText = vanilla.TextBox((10, 73, 100, 22), "y")
+        self.w.wText = vanilla.TextBox((100, 43, 100, 22), "w")
+        self.w.hText = vanilla.TextBox((100, 73, 100, 22), "h")
 
         # adding input boxes
-        self.w.xInput = EditText((30, 10, 50, 22), "%i" % x)
-        self.w.yInput = EditText((30, 40, 50, 22), "%i" % y)
-        self.w.wInput = EditText((120, 10, 50, 22))
-        self.w.hInput = EditText((120, 40, 50, 22))
+        self.w.xInput = vanilla.EditText((30, 40, 50, 22), "%i" % x)
+        self.w.yInput = vanilla.EditText((30, 70, 50, 22), "%i" % y)
+        self.w.wInput = vanilla.EditText((120, 40, 50, 22))
+        self.w.hInput = vanilla.EditText((120, 70, 50, 22))
 
         # a radio group with shape choices
         # (RadioGroup is not included in dialogKit, this is a vanilla object)
         self.shapes = ["rect", "oval"]
-        self.w.shape = RadioGroup((10, 70, -10, 22), self.shapes, isVertical=False)
+        self.w.shape = vanilla.RadioGroup((10, 100, -10, 22), self.shapes, isVertical=False)
         self.w.shape.set(0)
+
+        self.w.okButton = vanilla.Button((-70, -30, -15, 20), "OK", callback=self.okCallback, sizeStyle="small")
+        self.w.setDefaultButton(self.w.okButton)
+
+        self.w.closeButton = vanilla.Button((-150, -30, -80, 20), "Cancel", callback=self.cancelCallback, sizeStyle="small")
+        self.w.closeButton.bind(".", ["command"])
+        self.w.closeButton.bind(chr(27), [])
 
         self.w.open()
 
@@ -69,7 +73,7 @@ class GeometricShapesWindow(object):
             w = int(self.w.wInput.get())
             h = int(self.w.hInput.get())
         # if this fails just do nothing and print a tiny traceback
-        except:
+        except Exception:
             print("A number is required!")
             return
         # draw the shape with the callback given on init
@@ -77,7 +81,7 @@ class GeometricShapesWindow(object):
 
     def cancelCallback(self, sender):
         # do nothing :)
-        pass
+        self.w.close()
 
 
 def _roundPoint(x, y):
@@ -158,8 +162,8 @@ class DrawGeometricShapesTool(BaseEventTool):
 
         # draw an oval in the glyph using the pen
         elif shape == "oval":
-            hw = w/2.
-            hh = h/2.
+            hw = w / 2.
+            hh = h / 2.
             r = .55
             segmentType = glyph.preferredSegmentType
             if glyph.preferredSegmentType == "qcurve":
@@ -167,20 +171,20 @@ class DrawGeometricShapesTool(BaseEventTool):
 
             pen.beginPath()
             pen.addPoint(_roundPoint(x + hw, y), segmentType, True)
-            pen.addPoint(_roundPoint(x + hw + hw*r, y))
-            pen.addPoint(_roundPoint(x + w, y + hh - hh*r))
+            pen.addPoint(_roundPoint(x + hw + hw * r, y))
+            pen.addPoint(_roundPoint(x + w, y + hh - hh * r))
 
             pen.addPoint(_roundPoint(x + w, y + hh), segmentType, True)
-            pen.addPoint(_roundPoint(x + w, y + hh + hh*r))
-            pen.addPoint(_roundPoint(x + hw + hw*r, y + h))
+            pen.addPoint(_roundPoint(x + w, y + hh + hh * r))
+            pen.addPoint(_roundPoint(x + hw + hw * r, y + h))
 
             pen.addPoint(_roundPoint(x + hw, y + h), segmentType, True)
-            pen.addPoint(_roundPoint(x + hw - hw*r, y + h))
-            pen.addPoint(_roundPoint(x, y + hh + hh*r))
+            pen.addPoint(_roundPoint(x + hw - hw * r, y + h))
+            pen.addPoint(_roundPoint(x, y + hh + hh * r))
 
             pen.addPoint(_roundPoint(x, y + hh), segmentType, True)
-            pen.addPoint(_roundPoint(x, y + hh - hh*r))
-            pen.addPoint(_roundPoint(x + hw - hw*r, y))
+            pen.addPoint(_roundPoint(x, y + hh - hh * r))
+            pen.addPoint(_roundPoint(x + hw - hw * r, y))
 
             pen.endPath()
 
@@ -191,9 +195,9 @@ class DrawGeometricShapesTool(BaseEventTool):
     def mouseDown(self, point, clickCount):
         # a mouse down, only save the mouse down point
         self.minPoint = point
-        # on double click, pop up a modal dialog with input fields
+        # on double click, pop up a dialog with input fields
         if clickCount == 2:
-            # create and open the modal dialog
+            # create and open dialog
             GeometricShapesWindow(self.getGlyph(),
                             callback=self.drawShapeWithRectInGlyph,
                             x=self.minPoint.x,
@@ -295,6 +299,7 @@ class DrawGeometricShapesTool(BaseEventTool):
     def getToolbarTip(self):
         # return the toolbar tool tip
         return "Shape Tool"
+
 
 # install the tool!!
 installTool(DrawGeometricShapesTool())
