@@ -1,15 +1,9 @@
-from mojo.events import BaseEventTool, installTool
-from AppKit import *
-
-from lib.tools.drawing import strokePixelPath
-
+import AppKit
 import vanilla
 
-try: # RF >= 3.3b
-    from fontTools.pens.pointPen import ReverseContourPointPen
-except:
-    from ufoLib.pointPen import ReverseContourPointPen
+from fontTools.pens.pointPen import ReverseContourPointPen
 
+from mojo.events import BaseEventTool, installTool
 from mojo.extensions import ExtensionBundle
 
 
@@ -17,7 +11,6 @@ from mojo.extensions import ExtensionBundle
 
 shapeBundle = ExtensionBundle("ShapeTool")
 _cursorOval = CreateCursor(shapeBundle.get("cursorOval"), hotSpot=(6, 6))
-
 _cursorRect = CreateCursor(shapeBundle.get("cursorRect"), hotSpot=(6, 6))
 
 toolbarIcon = shapeBundle.get("toolbarIcon")
@@ -32,8 +25,8 @@ class GeometricShapesWindow(object):
         self.glyph = glyph
         self.callback = callback
 
-        self.w = vanilla.Sheet((200, 160), parentWindow=NSApp().mainWindow())
-        
+        self.w = vanilla.Sheet((200, 160), parentWindow=AppKit.NSApp().mainWindow())
+
         self.w.infoText = vanilla.TextBox((10, 13, -10, 22), "Add shape:")
         # add some text boxes (labels)
         self.w.xText = vanilla.TextBox((10, 43, 100, 22), "x")
@@ -90,6 +83,9 @@ def _roundPoint(x, y):
 
 class DrawGeometricShapesTool(BaseEventTool):
 
+    strokeColor = (1, 0, 0, 1)
+    reversedStrokColor = (0, 0, 1, 1)
+
     def setup(self):
         # setup is called when the tool becomes active
         # use this to initialize some attributes
@@ -99,6 +95,24 @@ class DrawGeometricShapesTool(BaseEventTool):
         self.origin = "corner"
         self.moveShapeShift = None
         self.shouldReverse = False
+
+        drawingLayer = self.extensionContainer("com.typemytype.shapeTool")
+        self.pathLayer = drawingLayer.appendPathSublayer(
+            fillColor=None,
+            strokeColor=self.strokeColor,
+            strokeWidth=-1
+        )
+        self.originLayer = drawingLayer.appendSymbolSublayer(
+            visible=False,
+            imageSettings=dict(
+                name="star",
+                pointCount=8,
+                inner=0.1,
+                outer=1,
+                size=(15, 15),
+                fillColor=self.strokeColor
+            )
+        )
 
     def getRect(self):
         # return the rect between mouse down and mouse up
@@ -211,6 +225,8 @@ class DrawGeometricShapesTool(BaseEventTool):
             w, h = self.moveShapeShift
             self.minPoint.x = self.maxPoint.x - w
             self.minPoint.y = self.maxPoint.y - h
+        # update layer
+        self.updateLayer()
 
     def mouseUp(self, point):
         # mouse up, if you have recorded the rect draw that into the glyph
@@ -219,12 +235,25 @@ class DrawGeometricShapesTool(BaseEventTool):
         # reset the tool
         self.minPoint = None
         self.maxPoint = None
+        # update layer
+        self.updateLayer()
 
     def keyDown(self, event):
         # reverse on tab
         if event.characters() == "\t":
             self.shouldReverse = not self.shouldReverse
-            self.getNSView().refresh()
+            if self.shouldReverse:
+                self.pathLayer.setStrokeColor(self.reversedStrokColor)
+
+                settings = self.originLayer.getImageSettings()
+                settings["fillColor"] = self.reversedStrokColor
+                self.originLayer.setImageSettings(settings)
+            else:
+                self.pathLayer.setStrokeColor(self.strokeColor)
+
+                settings = self.originLayer.getImageSettings()
+                settings["fillColor"] = self.strokeColor
+                self.originLayer.setImageSettings(settings)
 
     def modifiersChanged(self):
         # is being called with modifiers changed (shift, alt, control, command)
@@ -244,46 +273,27 @@ class DrawGeometricShapesTool(BaseEventTool):
             self.moveShapeShift = w, h
         else:
             self.moveShapeShift = None
-        # refresh the current glyph view
-        self.getNSView().refresh()
+        # update layer
+        self.updateLayer()
 
-    def draw(self, scale):
-        # draw stuff in the current glyph view
+    def updateLayer(self):
+        # update the layers with a new path and position for the origing point
         if self.isDragging() and self.minPoint and self.maxPoint:
-            # draw only during drag and when recorded some rect
-            # make the rect
             x, y, w, h = self.getRect()
-            rect = NSMakeRect(x, y, w, h)
-            # set the color
-            if self.shouldReverse:
-                NSColor.blueColor().set()
-            else:
-                NSColor.redColor().set()
-
+            pen = self.pathLayer.getPen()
             if self.shape == "rect":
-                # create a rect path
-                path = NSBezierPath.bezierPathWithRect_(rect)
-
+                pen.rect((x, y, w, h))
             elif self.shape == "oval":
-                # create a oval path
-                path = NSBezierPath.bezierPathWithOvalInRect_(rect)
+                pen.oval((x, y, w, h))
 
             if self.origin == "center":
-                # draw a cross hair at the center point
-                crossHairLength = 3 * scale
-                # get the center of the rectangle
-                centerX = x + w * .5
-                centerY = y + h * .5
-
-                path.moveToPoint_((centerX, centerY - crossHairLength))
-                path.lineToPoint_((centerX, centerY + crossHairLength))
-                path.moveToPoint_((centerX - crossHairLength, centerY))
-                path.lineToPoint_((centerX + crossHairLength, centerY))
-
-            # set the line width
-            path.setLineWidth_(scale)
-            # draw without anti-alias
-            strokePixelPath(path)
+                self.originLayer.setPosition((x + w / 2, y + h / 2))
+                self.originLayer.setVisible(True)
+            else:
+                self.originLayer.setVisible(False)
+        else:
+            self.pathLayer.setPath(None)
+            self.originLayer.setVisible(False)
 
     def getDefaultCursor(self):
         # returns the cursor
