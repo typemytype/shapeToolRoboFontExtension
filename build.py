@@ -16,12 +16,12 @@ B.name = "ShapeTool"
 B.developer = 'TypeMyType'
 B.developerURL = 'http://www.typemytype.com'
 B.icon = os.path.join(basePath, 'ShapeToolMechanicIcon.png')
-B.version = '1.7'
+B.version = '1.8'
 B.launchAtStartUp = True
 B.mainScript = 'drawShapesTool.py'
 B.html = True
-B.requiresVersionMajor = '3'
-B.requiresVersionMinor = '2'
+B.requiresVersionMajor = '4'
+B.requiresVersionMinor = '0'
 B.addToMenu = []
 
 with open(licensePath) as license:
