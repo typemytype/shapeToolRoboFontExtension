@@ -95,6 +95,7 @@ class DrawGeometricShapesTool(BaseEventTool):
         self.origin = "corner"
         self.moveShapeShift = None
         self.shouldReverse = False
+        self.shouldUseCubic = True
 
         drawingLayer = self.extensionContainer("com.typemytype.shapeTool")
         self.pathLayer = drawingLayer.appendPathSublayer(
@@ -157,9 +158,8 @@ class DrawGeometricShapesTool(BaseEventTool):
 
         # get the pen to draw with
         pen = glyph.getPointPen()
-        if glyph.preferredSegmentType == "qcurve" and not self.shouldReverse:
-            pen = ReverseContourPointPen(pen)
-        elif self.shouldReverse:
+
+        if self.shouldReverse:
             pen = ReverseContourPointPen(pen)
 
         x, y, w, h = rect
@@ -178,10 +178,13 @@ class DrawGeometricShapesTool(BaseEventTool):
         elif shape == "oval":
             hw = w / 2.
             hh = h / 2.
-            r = .55
-            segmentType = glyph.preferredSegmentType
-            if glyph.preferredSegmentType == "qcurve":
+
+            if self.shouldUseCubic:
+                r = .55
+                segmentType = "curve"
+            else:
                 r = .42
+                segmentType = "qcurve"
 
             pen.beginPath()
             pen.addPoint(_roundPoint(x + hw, y), segmentType, True)
@@ -266,6 +269,12 @@ class DrawGeometricShapesTool(BaseEventTool):
         # change the origin when command is down
         if self.commandDown:
             self.origin = "center"
+        # change cubic <-> quad when caps lock is down
+        self.shouldUseCubic = not self.capLockDown
+        if self.shouldUseCubic:
+            self.pathLayer.setStrokeDash(None)
+        else:
+            self.pathLayer.setStrokeDash([5, 3])
         # record the current size of the shape and store it
         if self.controlDown and self.moveShapeShift is None and self.minPoint and self.maxPoint:
             w = self.maxPoint.x - self.minPoint.x
