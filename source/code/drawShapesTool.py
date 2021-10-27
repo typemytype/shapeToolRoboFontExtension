@@ -1,16 +1,9 @@
+import AppKit
+import vanilla
+
+from fontTools.pens.pointPen import ReverseContourPointPen
+
 from mojo.events import BaseEventTool, installTool
-from AppKit import *
-
-from lib.tools.drawing import strokePixelPath
-
-from dialogKit import ModalDialog, TextBox, EditText
-from vanilla import RadioGroup
-
-try: # RF >= 3.3b
-    from fontTools.pens.pointPen import ReverseContourPointPen
-except:
-    from ufoLib.pointPen import ReverseContourPointPen
-
 from mojo.extensions import ExtensionBundle
 
 
@@ -18,7 +11,6 @@ from mojo.extensions import ExtensionBundle
 
 shapeBundle = ExtensionBundle("ShapeTool")
 _cursorOval = CreateCursor(shapeBundle.get("cursorOval"), hotSpot=(6, 6))
-
 _cursorRect = CreateCursor(shapeBundle.get("cursorRect"), hotSpot=(6, 6))
 
 toolbarIcon = shapeBundle.get("toolbarIcon")
@@ -32,29 +24,34 @@ class GeometricShapesWindow(object):
     def __init__(self, glyph, callback, x, y):
         self.glyph = glyph
         self.callback = callback
-        # create the modal dialog (from dialogKit)
-        self.w = ModalDialog((200, 150),
-                            "Shapes Tool",
-                            okCallback=self.okCallback,
-                            cancelCallback=self.cancelCallback)
 
+        self.w = vanilla.Sheet((200, 160), parentWindow=AppKit.NSApp().mainWindow())
+
+        self.w.infoText = vanilla.TextBox((10, 13, -10, 22), "Add shape:")
         # add some text boxes (labels)
-        self.w.xText = TextBox((10, 13, 100, 22), "x")
-        self.w.yText = TextBox((10, 43, 100, 22), "y")
-        self.w.wText = TextBox((100, 13, 100, 22), "w")
-        self.w.hText = TextBox((100, 43, 100, 22), "h")
+        self.w.xText = vanilla.TextBox((10, 43, 100, 22), "x")
+        self.w.yText = vanilla.TextBox((10, 73, 100, 22), "y")
+        self.w.wText = vanilla.TextBox((100, 43, 100, 22), "w")
+        self.w.hText = vanilla.TextBox((100, 73, 100, 22), "h")
 
         # adding input boxes
-        self.w.xInput = EditText((30, 10, 50, 22), "%i" % x)
-        self.w.yInput = EditText((30, 40, 50, 22), "%i" % y)
-        self.w.wInput = EditText((120, 10, 50, 22))
-        self.w.hInput = EditText((120, 40, 50, 22))
+        self.w.xInput = vanilla.EditText((30, 40, 50, 22), "%i" % x)
+        self.w.yInput = vanilla.EditText((30, 70, 50, 22), "%i" % y)
+        self.w.wInput = vanilla.EditText((120, 40, 50, 22))
+        self.w.hInput = vanilla.EditText((120, 70, 50, 22))
 
         # a radio group with shape choices
         # (RadioGroup is not included in dialogKit, this is a vanilla object)
         self.shapes = ["rect", "oval"]
-        self.w.shape = RadioGroup((10, 70, -10, 22), self.shapes, isVertical=False)
+        self.w.shape = vanilla.RadioGroup((10, 100, -10, 22), self.shapes, isVertical=False)
         self.w.shape.set(0)
+
+        self.w.okButton = vanilla.Button((-70, -30, -15, 20), "OK", callback=self.okCallback, sizeStyle="small")
+        self.w.setDefaultButton(self.w.okButton)
+
+        self.w.closeButton = vanilla.Button((-150, -30, -80, 20), "Cancel", callback=self.cancelCallback, sizeStyle="small")
+        self.w.closeButton.bind(".", ["command"])
+        self.w.closeButton.bind(chr(27), [])
 
         self.w.open()
 
@@ -69,7 +66,7 @@ class GeometricShapesWindow(object):
             w = int(self.w.wInput.get())
             h = int(self.w.hInput.get())
         # if this fails just do nothing and print a tiny traceback
-        except:
+        except Exception:
             print("A number is required!")
             return
         # draw the shape with the callback given on init
@@ -77,7 +74,7 @@ class GeometricShapesWindow(object):
 
     def cancelCallback(self, sender):
         # do nothing :)
-        pass
+        self.w.close()
 
 
 def _roundPoint(x, y):
@@ -85,6 +82,9 @@ def _roundPoint(x, y):
 
 
 class DrawGeometricShapesTool(BaseEventTool):
+
+    strokeColor = (1, 0, 0, 1)
+    reversedStrokColor = (0, 0, 1, 1)
 
     def setup(self):
         # setup is called when the tool becomes active
@@ -95,6 +95,25 @@ class DrawGeometricShapesTool(BaseEventTool):
         self.origin = "corner"
         self.moveShapeShift = None
         self.shouldReverse = False
+        self.shouldUseCubic = True
+
+        drawingLayer = self.extensionContainer("com.typemytype.shapeTool")
+        self.pathLayer = drawingLayer.appendPathSublayer(
+            fillColor=None,
+            strokeColor=self.strokeColor,
+            strokeWidth=-1
+        )
+        self.originLayer = drawingLayer.appendSymbolSublayer(
+            visible=False,
+            imageSettings=dict(
+                name="star",
+                pointCount=8,
+                inner=0.1,
+                outer=1,
+                size=(15, 15),
+                fillColor=self.strokeColor
+            )
+        )
 
     def getRect(self):
         # return the rect between mouse down and mouse up
@@ -139,9 +158,8 @@ class DrawGeometricShapesTool(BaseEventTool):
 
         # get the pen to draw with
         pen = glyph.getPointPen()
-        if glyph.preferredSegmentType == "qcurve" and not self.shouldReverse:
-            pen = ReverseContourPointPen(pen)
-        elif self.shouldReverse:
+
+        if self.shouldReverse:
             pen = ReverseContourPointPen(pen)
 
         x, y, w, h = rect
@@ -158,29 +176,32 @@ class DrawGeometricShapesTool(BaseEventTool):
 
         # draw an oval in the glyph using the pen
         elif shape == "oval":
-            hw = w/2.
-            hh = h/2.
-            r = .55
-            segmentType = glyph.preferredSegmentType
-            if glyph.preferredSegmentType == "qcurve":
+            hw = w / 2.
+            hh = h / 2.
+
+            if self.shouldUseCubic:
+                r = .55
+                segmentType = "curve"
+            else:
                 r = .42
+                segmentType = "qcurve"
 
             pen.beginPath()
             pen.addPoint(_roundPoint(x + hw, y), segmentType, True)
-            pen.addPoint(_roundPoint(x + hw + hw*r, y))
-            pen.addPoint(_roundPoint(x + w, y + hh - hh*r))
+            pen.addPoint(_roundPoint(x + hw + hw * r, y))
+            pen.addPoint(_roundPoint(x + w, y + hh - hh * r))
 
             pen.addPoint(_roundPoint(x + w, y + hh), segmentType, True)
-            pen.addPoint(_roundPoint(x + w, y + hh + hh*r))
-            pen.addPoint(_roundPoint(x + hw + hw*r, y + h))
+            pen.addPoint(_roundPoint(x + w, y + hh + hh * r))
+            pen.addPoint(_roundPoint(x + hw + hw * r, y + h))
 
             pen.addPoint(_roundPoint(x + hw, y + h), segmentType, True)
-            pen.addPoint(_roundPoint(x + hw - hw*r, y + h))
-            pen.addPoint(_roundPoint(x, y + hh + hh*r))
+            pen.addPoint(_roundPoint(x + hw - hw * r, y + h))
+            pen.addPoint(_roundPoint(x, y + hh + hh * r))
 
             pen.addPoint(_roundPoint(x, y + hh), segmentType, True)
-            pen.addPoint(_roundPoint(x, y + hh - hh*r))
-            pen.addPoint(_roundPoint(x + hw - hw*r, y))
+            pen.addPoint(_roundPoint(x, y + hh - hh * r))
+            pen.addPoint(_roundPoint(x + hw - hw * r, y))
 
             pen.endPath()
 
@@ -191,9 +212,9 @@ class DrawGeometricShapesTool(BaseEventTool):
     def mouseDown(self, point, clickCount):
         # a mouse down, only save the mouse down point
         self.minPoint = point
-        # on double click, pop up a modal dialog with input fields
+        # on double click, pop up a dialog with input fields
         if clickCount == 2:
-            # create and open the modal dialog
+            # create and open dialog
             GeometricShapesWindow(self.getGlyph(),
                             callback=self.drawShapeWithRectInGlyph,
                             x=self.minPoint.x,
@@ -207,6 +228,8 @@ class DrawGeometricShapesTool(BaseEventTool):
             w, h = self.moveShapeShift
             self.minPoint.x = self.maxPoint.x - w
             self.minPoint.y = self.maxPoint.y - h
+        # update layer
+        self.updateLayer()
 
     def mouseUp(self, point):
         # mouse up, if you have recorded the rect draw that into the glyph
@@ -215,12 +238,25 @@ class DrawGeometricShapesTool(BaseEventTool):
         # reset the tool
         self.minPoint = None
         self.maxPoint = None
+        # update layer
+        self.updateLayer()
 
     def keyDown(self, event):
         # reverse on tab
         if event.characters() == "\t":
             self.shouldReverse = not self.shouldReverse
-            self.getNSView().refresh()
+            if self.shouldReverse:
+                self.pathLayer.setStrokeColor(self.reversedStrokColor)
+
+                settings = self.originLayer.getImageSettings()
+                settings["fillColor"] = self.reversedStrokColor
+                self.originLayer.setImageSettings(settings)
+            else:
+                self.pathLayer.setStrokeColor(self.strokeColor)
+
+                settings = self.originLayer.getImageSettings()
+                settings["fillColor"] = self.strokeColor
+                self.originLayer.setImageSettings(settings)
 
     def modifiersChanged(self):
         # is being called with modifiers changed (shift, alt, control, command)
@@ -233,6 +269,12 @@ class DrawGeometricShapesTool(BaseEventTool):
         # change the origin when command is down
         if self.commandDown:
             self.origin = "center"
+        # change cubic <-> quad when caps lock is down
+        self.shouldUseCubic = not self.capLockDown
+        if self.shouldUseCubic:
+            self.pathLayer.setStrokeDash(None)
+        else:
+            self.pathLayer.setStrokeDash([5, 3])
         # record the current size of the shape and store it
         if self.controlDown and self.moveShapeShift is None and self.minPoint and self.maxPoint:
             w = self.maxPoint.x - self.minPoint.x
@@ -240,46 +282,27 @@ class DrawGeometricShapesTool(BaseEventTool):
             self.moveShapeShift = w, h
         else:
             self.moveShapeShift = None
-        # refresh the current glyph view
-        self.getNSView().refresh()
+        # update layer
+        self.updateLayer()
 
-    def draw(self, scale):
-        # draw stuff in the current glyph view
+    def updateLayer(self):
+        # update the layers with a new path and position for the origing point
         if self.isDragging() and self.minPoint and self.maxPoint:
-            # draw only during drag and when recorded some rect
-            # make the rect
             x, y, w, h = self.getRect()
-            rect = NSMakeRect(x, y, w, h)
-            # set the color
-            if self.shouldReverse:
-                NSColor.blueColor().set()
-            else:
-                NSColor.redColor().set()
-
+            pen = self.pathLayer.getPen()
             if self.shape == "rect":
-                # create a rect path
-                path = NSBezierPath.bezierPathWithRect_(rect)
-
+                pen.rect((x, y, w, h))
             elif self.shape == "oval":
-                # create a oval path
-                path = NSBezierPath.bezierPathWithOvalInRect_(rect)
+                pen.oval((x, y, w, h))
 
             if self.origin == "center":
-                # draw a cross hair at the center point
-                crossHairLength = 3 * scale
-                # get the center of the rectangle
-                centerX = x + w * .5
-                centerY = y + h * .5
-
-                path.moveToPoint_((centerX, centerY - crossHairLength))
-                path.lineToPoint_((centerX, centerY + crossHairLength))
-                path.moveToPoint_((centerX - crossHairLength, centerY))
-                path.lineToPoint_((centerX + crossHairLength, centerY))
-
-            # set the line width
-            path.setLineWidth_(scale)
-            # draw without anti-alias
-            strokePixelPath(path)
+                self.originLayer.setPosition((x + w / 2, y + h / 2))
+                self.originLayer.setVisible(True)
+            else:
+                self.originLayer.setVisible(False)
+        else:
+            self.pathLayer.setPath(None)
+            self.originLayer.setVisible(False)
 
     def getDefaultCursor(self):
         # returns the cursor
@@ -295,6 +318,7 @@ class DrawGeometricShapesTool(BaseEventTool):
     def getToolbarTip(self):
         # return the toolbar tool tip
         return "Shape Tool"
+
 
 # install the tool!!
 installTool(DrawGeometricShapesTool())
