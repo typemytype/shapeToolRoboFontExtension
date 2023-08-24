@@ -5,13 +5,16 @@ from fontTools.pens.pointPen import ReverseContourPointPen
 
 from mojo.events import BaseEventTool, installTool
 from mojo.extensions import ExtensionBundle
+from mojo.UI import inDarkMode
 
 
 # collecting image data for building cursors and toolbar icons
 
 shapeBundle = ExtensionBundle("ShapeTool")
 _cursorOval = CreateCursor(shapeBundle.get("cursorOval"), hotSpot=(6, 6))
+_cursorOvalDark = CreateCursor(shapeBundle.get("cursorOvalDark"), hotSpot=(6, 6))
 _cursorRect = CreateCursor(shapeBundle.get("cursorRect"), hotSpot=(6, 6))
+_cursorRectDark = CreateCursor(shapeBundle.get("cursorRectDark"), hotSpot=(6, 6))
 
 toolbarIcon = shapeBundle.get("toolbarIcon")
 
@@ -84,7 +87,7 @@ def _roundPoint(x, y):
 class DrawGeometricShapesTool(BaseEventTool):
 
     strokeColor = (1, 0, 0, 1)
-    reversedStrokColor = (0, 0, 1, 1)
+    reversedStrokeColor = (0, 0, 1, 1)
 
     def setup(self):
         # setup is called when the tool becomes active
@@ -246,10 +249,10 @@ class DrawGeometricShapesTool(BaseEventTool):
         if event.characters() == "\t":
             self.shouldReverse = not self.shouldReverse
             if self.shouldReverse:
-                self.pathLayer.setStrokeColor(self.reversedStrokColor)
+                self.pathLayer.setStrokeColor(self.reversedStrokeColor)
 
                 settings = self.originLayer.getImageSettings()
-                settings["fillColor"] = self.reversedStrokColor
+                settings["fillColor"] = self.reversedStrokeColor
                 self.originLayer.setImageSettings(settings)
             else:
                 self.pathLayer.setStrokeColor(self.strokeColor)
@@ -305,11 +308,17 @@ class DrawGeometricShapesTool(BaseEventTool):
             self.originLayer.setVisible(False)
 
     def getDefaultCursor(self):
-        # returns the cursor
+        # return the cursor
         if self.shape == "rect":
-            return _cursorRect
+            if inDarkMode():
+                return _cursorRectDark
+            else:
+                return _cursorRect
         else:
-            return _cursorOval
+            if inDarkMode():
+                return _cursorOvalDark
+            else:
+                return _cursorOval
 
     def getToolbarIcon(self):
         # return the toolbar icon
