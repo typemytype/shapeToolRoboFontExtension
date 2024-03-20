@@ -1,0 +1,10 @@
+name: Shape Tool
+developer: TypeMyType
+developerURL: http://www.typemytype.com
+launchAtStartUp: true
+mainScript: drawShapesTool.py
+version: '1.9'
+addToMenu: []
+html: true
+requiresVersionMajor: '4'
+requiresVersionMinor: '0'
