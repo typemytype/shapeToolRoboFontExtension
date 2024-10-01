@@ -15,14 +15,14 @@
 	<key>mainScript</key>
 	<string>drawShapesTool.py</string>
 	<key>name</key>
-	<string>ShapeTool</string>
+	<string>Shape Tool</string>
 	<key>requiresVersionMajor</key>
 	<string>4</string>
 	<key>requiresVersionMinor</key>
 	<string>4b</string>
 	<key>timeStamp</key>
-	<real>1692898081.3423529</real>
+	<real>1727807380.559138</real>
 	<key>version</key>
-	<string>1.9.1</string>
+	<string>1.2</string>
 </dict>
 </plist>
