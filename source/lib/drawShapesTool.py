@@ -50,8 +50,10 @@ class GeometricShapesWindow(object):
         # (RadioGroup is not included in dialogKit, this is a vanilla object)
         self.shapes = ["rect", "oval"]
         self.w.shape = vanilla.RadioGroup((10, 100, -10, 22), self.shapes, isVertical=False)
-        self.w.shape.set(0)
-
+        if AppKit.NSEvent.modifierFlags() & AppKit.NSEventModifierFlagOption:
+            self.w.shape.set(1)
+        else:
+            self.w.shape.set(0)
         self.w.okButton = vanilla.Button((-70, -30, -15, 20), "OK", callback=self.okCallback, sizeStyle="small")
         self.w.setDefaultButton(self.w.okButton)
 
