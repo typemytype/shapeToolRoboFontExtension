@@ -10,8 +10,14 @@ from mojo.extensions import ExtensionBundle
 # collecting image data for building cursors and toolbar icons
 
 shapeBundle = ExtensionBundle("ShapeTool")
-_cursorOval = CreateCursor(shapeBundle.get("cursorOval"), hotSpot=(6, 6))
-_cursorRect = CreateCursor(shapeBundle.get("cursorRect"), hotSpot=(6, 6))
+
+_cursorOvalImage = shapeBundle.getResourceImage("cursorOval")
+_cursorOvalImage.setTemplate_(True)
+_cursorOval = CreateCursor(_cursorOvalImage, hotSpot=(6, 6))
+
+_cursorRectImage = shapeBundle.getResourceImage("cursorOval")
+_cursorRectImage.setTemplate_(True)
+_cursorRect = CreateCursor(_cursorRectImage, hotSpot=(6, 6))
 
 toolbarIcon = shapeBundle.get("toolbarIcon")
 
