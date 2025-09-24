@@ -31,33 +31,37 @@ class GeometricShapesWindow(object):
         self.glyph = glyph
         self.callback = callback
 
-        self.w = vanilla.Sheet((200, 160), parentWindow=AppKit.NSApp().mainWindow())
+        self.w = vanilla.Sheet((200, 170), parentWindow=AppKit.NSApp().mainWindow())
 
-        self.w.infoText = vanilla.TextBox((10, 13, -10, 22), "Add shape:")
-        # add some text boxes (labels)
-        self.w.xText = vanilla.TextBox((10, 43, 100, 22), "x")
-        self.w.yText = vanilla.TextBox((10, 73, 100, 22), "y")
-        self.w.wText = vanilla.TextBox((100, 43, 100, 22), "w")
-        self.w.hText = vanilla.TextBox((100, 73, 100, 22), "h")
-
-        # adding input boxes
-        self.w.xInput = vanilla.EditText((30, 40, 50, 22), "%i" % x)
-        self.w.yInput = vanilla.EditText((30, 70, 50, 22), "%i" % y)
-        self.w.wInput = vanilla.EditText((120, 40, 50, 22))
-        self.w.hInput = vanilla.EditText((120, 70, 50, 22))
-
+        y = 13
+        txt = AppKit.NSAttributedString.alloc().initWithString_attributes_("Add shape:", {AppKit.NSFontAttributeName: AppKit.NSFont.boldSystemFontOfSize_(0)})
+        self.w.infoText = vanilla.TextBox((10, y, -10, 22), txt)
+        y += 25
         # a radio group with shape choices
         # (RadioGroup is not included in dialogKit, this is a vanilla object)
         self.shapes = ["rect", "oval"]
-        self.w.shape = vanilla.RadioGroup((10, 100, -10, 22), self.shapes, isVertical=False)
+        self.w.shape = vanilla.RadioGroup((10, y, -10, 22), self.shapes, isVertical=False)
+        y += 35
+        # add some text + input boxes (labels)
+        self.w.xText = vanilla.TextBox((10, y, 100, 22), "x")
+        self.w.xInput = vanilla.EditText((30, y - 3, 50, 22), "%i" % x)
+        self.w.yText = vanilla.TextBox((100, y, 100, 22), "y")
+        self.w.yInput = vanilla.EditText((120, y - 3, 50, 22), "%i" % y)
+        y += 30
+        self.w.wText = vanilla.TextBox((10, y, 100, 22), "w")
+        self.w.wInput = vanilla.EditText((30, y - 3, 50, 22))
+        self.w.hText = vanilla.TextBox((100, y, 100, 22), "h")
+        self.w.hInput = vanilla.EditText((120, y - 3, 50, 22))
+        y += 30
+
         if AppKit.NSEvent.modifierFlags() & AppKit.NSEventModifierFlagOption:
             self.w.shape.set(1)
         else:
             self.w.shape.set(0)
-        self.w.okButton = vanilla.Button((-70, -30, -15, 20), "OK", callback=self.okCallback, sizeStyle="small")
+        self.w.okButton = vanilla.Button((-70, -30, -15, 20), "OK", callback=self.okCallback)
         self.w.setDefaultButton(self.w.okButton)
 
-        self.w.closeButton = vanilla.Button((-150, -30, -80, 20), "Cancel", callback=self.cancelCallback, sizeStyle="small")
+        self.w.closeButton = vanilla.Button((-150, -30, -80, 20), "Cancel", callback=self.cancelCallback)
         self.w.closeButton.bind(".", ["command"])
         self.w.closeButton.bind(chr(27), [])
 

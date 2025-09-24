@@ -3,7 +3,7 @@ developer: TypeMyType
 developerURL: http://www.typemytype.com
 launchAtStartUp: true
 mainScript: drawShapesTool.py
-version: '1.11'
+version: '1.12'
 addToMenu: []
 html: true
 requiresVersionMajor: '4'
