@@ -113,7 +113,7 @@ class DrawGeometricShapesTool(BaseEventTool):
         self.pathLayer = drawingLayer.appendPathSublayer(
             fillColor=None,
             strokeColor=self.strokeColor,
-            strokeWidth=-1
+            strokeWidth=1
         )
         self.originLayer = drawingLayer.appendSymbolSublayer(
             visible=False,
