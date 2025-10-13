@@ -15,7 +15,7 @@ _cursorOvalImage = shapeBundle.getResourceImage("cursorOval")
 _cursorOvalImage.setTemplate_(True)
 _cursorOval = CreateCursor(_cursorOvalImage, hotSpot=(6, 6))
 
-_cursorRectImage = shapeBundle.getResourceImage("cursorOval")
+_cursorRectImage = shapeBundle.getResourceImage("cursorRect")
 _cursorRectImage.setTemplate_(True)
 _cursorRect = CreateCursor(_cursorRectImage, hotSpot=(6, 6))
 
