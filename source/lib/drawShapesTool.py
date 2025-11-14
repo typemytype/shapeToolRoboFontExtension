@@ -13,11 +13,11 @@ shapeBundle = ExtensionBundle("ShapeTool")
 
 _cursorOvalImage = shapeBundle.getResourceImage("cursorOval")
 _cursorOvalImage.setTemplate_(True)
-_cursorOval = CreateCursor(_cursorOvalImage, hotSpot=(6, 6))
+_cursorOval = CreateCursor(_cursorOvalImage, hotSpot=(7, 7))
 
 _cursorRectImage = shapeBundle.getResourceImage("cursorRect")
 _cursorRectImage.setTemplate_(True)
-_cursorRect = CreateCursor(_cursorRectImage, hotSpot=(6, 6))
+_cursorRect = CreateCursor(_cursorRectImage, hotSpot=(7, 7))
 
 toolbarIcon = shapeBundle.get("toolbarIcon")
 
